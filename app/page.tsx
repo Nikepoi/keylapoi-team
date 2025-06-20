@@ -1,74 +1,55 @@
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import Image from 'next/image';
-import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
-type PostMeta = {
-  title?: string;
-  date?: string;
-  thumbnail?: string;
-  externalLink?: string;
-  externalLinks?: string[];
+type Post = {
+  title: string;
+  date: string;
+  thumbnail: string;
+  externalLinks: string[];
 };
 
-const getSafeTimestamp = (dateStr: string): number => {
-  const timestamp = Date.parse(dateStr);
-  return isNaN(timestamp) ? Date.parse('1970-01-01') : timestamp;
+type Props = {
+  params: { id: string };
 };
 
-export default async function Home() {
+export default async function Page({ params }: Props) {
+  const { id } = params;
   const contentDir = path.join(process.cwd(), 'content');
   const files = fs.readdirSync(contentDir);
-  const posts = files
-    .map((file) => {
-      const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
-      const { data } = matter(fileContent) as { data: PostMeta };
-      return {
-        id: file.replace('.md', ''),
-        title: data.title || 'No Title',
-        date: data.date || '1970-01-01',
-        thumbnail: data.thumbnail || '',
-        externalLinks: data.externalLinks || [data.externalLink || ''],
-      };
-    })
-    .sort((a, b) => getSafeTimestamp(b.date) - getSafeTimestamp(a.date));
+
+  const file = files.find((file) => file.replace('.md', '') === id);
+  if (!file) return notFound();
+
+  const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
+  const { data } = matter(fileContent);
+
+  const post: Post = {
+    title: data.title || 'No Title',
+    date: data.date || '1970-01-01',
+    thumbnail: data.thumbnail || '',
+    externalLinks: data.externalLinks || [data.externalLink || ''],
+  };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold text-yellow-500 text-center mb-6">KeylaPoi - Postingan Terbaru</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {posts.map((post) => {
-          const decodedLinks = post.externalLinks.map((link) => atob(link));
-          const serverNames = decodedLinks.map((url) => {
-            if (url.includes('videy.co')) return 'Videy';
-            if (url.includes('1024terabox.com')) return 'Terabox';
-            if (url.includes('pixeldrain.com')) return 'Pixeldrain';
-            return 'Other';
-          });
-
-          return (
-            <div key={post.id} className="bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-700">
-              <Link href={`/safelink/${post.id}`} target="_blank" rel="noopener noreferrer">
-                <Image
-                  src={post.thumbnail}
-                  alt={post.title}
-                  width={300}
-                  height={300}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4 text-center">
-                  <h3 className="text-lg font-semibold text-yellow-500">{post.title}</h3>
-                  <p className="text-gray-400 text-sm">{post.date}</p>
-                  {serverNames.length > 0 && (
-                    <p className="text-gray-300 text-xs">Links: {serverNames.join(', ')}</p>
-                  )}
-                </div>
-              </Link>
-            </div>
-          );
-        })}
+    <div className="bg-gray-900 text-white p-4 text-center">
+      <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
+      <p className="text-sm mb-4">{post.date}</p>
+      <div className="text-sm">
+        {post.externalLinks.map((link, idx) => (
+          <div key={idx}>
+            <a
+              href={atob(link)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 underline"
+            >
+              Kunjungi Link {idx + 1}
+            </a>
+          </div>
+        ))}
       </div>
     </div>
   );
-        }
+            }
