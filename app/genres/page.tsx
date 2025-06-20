@@ -3,14 +3,14 @@ import path from 'path';
 import matter from 'gray-matter';
 import Link from 'next/link';
 
-// Definisikan tipe buat post
+// Definisikan tipe buat post dengan properti opsional
 interface Post {
   id: string;
-  title: string;
-  date: string;
-  thumbnail: string;
+  title?: string;
+  date?: string;
+  thumbnail?: string;
   externalLinks: string[];
-  genre?: string; // Opsional karena ga semua post punya genre
+  genre?: string;
   [key: string]: any; // Buat field tambahan
 }
 
@@ -20,7 +20,14 @@ export default async function Genres() {
   const posts: Post[] = files.map((file) => {
     const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
     const { data } = matter(fileContent);
-    return { id: file.replace('.md', ''), ...data, externalLinks: data.externalLinks || [data.externalLink || ''] };
+    return {
+      id: file.replace('.md', ''),
+      title: data.title || 'No Title',
+      date: data.date || 'No Date',
+      thumbnail: data.thumbnail || '',
+      externalLinks: data.externalLinks || [data.externalLink || ''],
+      genre: data.genre,
+    };
   });
 
   const postsByGenre = posts.reduce((acc, post) => {
@@ -40,8 +47,8 @@ export default async function Genres() {
             {postsByGenre[genre].map((post) => (
               <div key={post.id} className="bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-700 p-4">
                 <Link href={`/safelink/${post.id}`} target="_blank" rel="noopener noreferrer">
-                  <h3 className="text-lg font-semibold text-yellow-500">{post.title}</h3>
-                  <p className="text-gray-400 text-sm">{post.date}</p>
+                  <h3 className="text-lg font-semibold text-yellow-500">{post.title || 'No Title'}</h3>
+                  <p className="text-gray-400 text-sm">{post.date || 'No Date'}</p>
                 </Link>
               </div>
             ))}
@@ -50,4 +57,4 @@ export default async function Genres() {
       ))}
     </div>
   );
-}
+      }
