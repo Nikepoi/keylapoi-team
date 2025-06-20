@@ -1,55 +1,49 @@
+// ./app/safelink/[id]/page.tsx
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import { notFound } from 'next/navigation';
 
-type Post = {
+import React from 'react';
+
+interface Post {
   title: string;
   date: string;
   thumbnail: string;
   externalLinks: string[];
-};
+}
 
-type Props = {
-  params: { id: string };
-};
-
-export default async function Page({ params }: Props) {
-  const { id } = params;
+export default function Page({ params }: { params: { id: string } }) {
   const contentDir = path.join(process.cwd(), 'content');
-  const files = fs.readdirSync(contentDir);
+  const filePath = path.join(contentDir, `${params.id}.md`);
 
-  const file = files.find((file) => file.replace('.md', '') === id);
-  if (!file) return notFound();
+  if (!fs.existsSync(filePath)) {
+    return <div className="bg-gray-900 text-white p-4 text-center">Postingan tidak ditemukan.</div>;
+  }
 
-  const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
+  const fileContent = fs.readFileSync(filePath, 'utf8');
   const { data } = matter(fileContent);
 
   const post: Post = {
-    title: data.title || 'No Title',
-    date: data.date || '1970-01-01',
+    title: data.title || '',
+    date: data.date || '',
     thumbnail: data.thumbnail || '',
     externalLinks: data.externalLinks || [data.externalLink || ''],
   };
 
   return (
-    <div className="bg-gray-900 text-white p-4 text-center">
-      <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
-      <p className="text-sm mb-4">{post.date}</p>
-      <div className="text-sm">
-        {post.externalLinks.map((link, idx) => (
-          <div key={idx}>
-            <a
-              href={atob(link)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 underline"
-            >
-              Kunjungi Link {idx + 1}
+    <div className="bg-gray-900 text-white p-4">
+      <h1 className="text-xl font-bold mb-4">{post.title}</h1>
+      <p className="mb-2">Tanggal: {post.date}</p>
+      <img src={post.thumbnail} alt={post.title} className="w-full h-64 object-cover mb-4" />
+      <ul className="list-disc pl-6">
+        {post.externalLinks.map((link, i) => (
+          <li key={i}>
+            <a href={atob(link)} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
+              {atob(link)}
             </a>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
-            }
+}
