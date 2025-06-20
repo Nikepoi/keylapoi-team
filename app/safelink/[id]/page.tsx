@@ -12,7 +12,17 @@ interface Post {
   [key: string]: any; // Buat field tambahan seperti genre
 }
 
-export default function Safelink({ post }: { post: Post | null }) {
+export default function Safelink({ params }: { params: { id: string } }) {
+  const contentDir = path.join(process.cwd(), 'content');
+  const file = fs.readdirSync(contentDir).find(f => f.replace('.md', '') === params.id);
+  let post: Post | null = null;
+
+  if (file) {
+    const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
+    const { data } = matter(fileContent);
+    post = { ...data, externalLinks: data.externalLinks || [data.externalLink || ''] };
+  }
+
   if (!post) return <div className="bg-gray-900 text-white p-4 text-center">Postingan ga ketemu!</div>;
 
   const handleRedirect = (link: string) => {
@@ -62,4 +72,4 @@ export async function generateStaticParams() {
   const contentDir = path.join(process.cwd(), 'content');
   const files = fs.readdirSync(contentDir);
   return files.map(file => ({ id: file.replace('.md', '') }));
-                  }
+      }
