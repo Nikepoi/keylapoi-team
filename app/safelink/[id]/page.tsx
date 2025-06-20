@@ -7,13 +7,27 @@ import path from 'path';
 import matter from 'gray-matter';
 import Image from 'next/image';
 
-export default function Safelink({ post }) {
+export default function Safelink() {
   const params = useParams();
   const { id } = params || {};
   const [countdown, setCountdown] = useState(6);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [currentLinkIndex, setCurrentLinkIndex] = useState(0);
   const [decodedLinks, setDecodedLinks] = useState<string[]>([]);
+  const [post, setPost] = useState(null);
+
+  useEffect(() => {
+    const loadPost = async () => {
+      const contentDir = path.join(process.cwd(), 'content');
+      const file = fs.readdirSync(contentDir).find(f => f.replace('.md', '') === id);
+      if (file) {
+        const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
+        const { data } = matter(fileContent);
+        setPost({ ...data, externalLinks: data.externalLinks || [data.externalLink || ''] });
+      }
+    };
+    loadPost();
+  }, [id]);
 
   useEffect(() => {
     if (post?.externalLinks?.length) {
@@ -51,7 +65,7 @@ export default function Safelink({ post }) {
     return 'Other';
   };
 
-  if (!post) return <div className="bg-gray-900 text-white p-4 text-center">Postingan ga ketemu!</div>;
+  if (!post) return <div className="bg-gray-900 text-white p-4 text-center">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center font-poppins">
@@ -84,10 +98,4 @@ export default function Safelink({ post }) {
       </div>
     </div>
   );
-}
-
-export async function generateStaticParams() {
-  const contentDir = path.join(process.cwd(), 'content');
-  const files = fs.readdirSync(contentDir);
-  return files.map(file => ({ id: file.replace('.md', '') }));
-                       }
+            }
