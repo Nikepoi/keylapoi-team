@@ -18,9 +18,12 @@ export default async function Home() {
       externalLinks: data.externalLinks || [data.externalLink || ''],
     };
   }).sort((a, b) => {
-    const dateA = new Date(a.date).getTime() || 0; // Konversi ke timestamp, default 0 kalau ga valid
-    const dateB = new Date(b.date).getTime() || 0;
-    return dateB - dateA; // Sort descending
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    // Pake getTime dan fallback ke 0 kalau NaN
+    const timeA = !isNaN(dateA.getTime()) ? dateA.getTime() : 0;
+    const timeB = !isNaN(dateB.getTime()) ? dateB.getTime() : 0;
+    return timeB - timeA; // Sort descending
   });
 
   return (
@@ -54,4 +57,4 @@ export default async function Home() {
       </div>
     </div>
   );
-                                                                                  }
+          }
