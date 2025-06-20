@@ -3,15 +3,24 @@ import path from 'path';
 import matter from 'gray-matter';
 import Image from 'next/image';
 
-export default function Safelink({ post }) {
+// Definisikan tipe buat post
+interface Post {
+  title: string;
+  date: string;
+  thumbnail: string;
+  externalLinks: string[];
+  [key: string]: any; // Buat field tambahan seperti genre
+}
+
+export default function Safelink({ post }: { post: Post | null }) {
   if (!post) return <div className="bg-gray-900 text-white p-4 text-center">Postingan ga ketemu!</div>;
 
-  const handleRedirect = (link) => {
+  const handleRedirect = (link: string) => {
     alert('Link akan dibuka di tab baru!');
     window.open(atob(link), '_blank');
   };
 
-  const getServerName = (url) => {
+  const getServerName = (url: string) => {
     if (url.includes('videy.co')) return 'Videy';
     if (url.includes('1024terabox.com')) return 'Terabox';
     if (url.includes('pixeldrain.com')) return 'Pixeldrain';
@@ -53,4 +62,4 @@ export async function generateStaticParams() {
   const contentDir = path.join(process.cwd(), 'content');
   const files = fs.readdirSync(contentDir);
   return files.map(file => ({ id: file.replace('.md', '') }));
-    }
+                  }
