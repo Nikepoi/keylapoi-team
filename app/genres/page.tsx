@@ -4,30 +4,32 @@ import matter from 'gray-matter';
 import Image from 'next/image';
 import Link from 'next/link';
 
-// Fungsi konversi tanggal yang aman
+// Fungsi konversi tanggal yang super aman
 const getSafeTimestamp = (dateStr: string): number => {
-  const timestamp = Date.parse(dateStr); // Konversi ke timestamp
-  return isNaN(timestamp) ? 0 : timestamp; // Fallback ke 0 kalau ga valid
+  const timestamp = Date.parse(dateStr); // Coba parse ke timestamp
+  return isNaN(timestamp) ? Date.parse('1970-01-01') : timestamp; // Fallback ke epoch kalau ga valid
 };
 
 export default async function Home() {
   const contentDir = path.join(process.cwd(), 'content');
   const files = fs.readdirSync(contentDir);
-  const posts = files.map((file) => {
-    const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
-    const { data } = matter(fileContent);
-    return {
-      id: file.replace('.md', ''),
-      title: data.title || 'No Title',
-      date: data.date || '1970-01-01', // Default ke tanggal awal
-      thumbnail: data.thumbnail || '',
-      externalLinks: data.externalLinks || [data.externalLink || ''],
-    };
-  }).sort((a, b) => {
-    const timeA = getSafeTimestamp(a.date);
-    const timeB = getSafeTimestamp(b.date);
-    return timeB - timeA; // Sort descending
-  });
+  const posts = files
+    .map((file) => {
+      const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
+      const { data } = matter(fileContent);
+      return {
+        id: file.replace('.md', ''),
+        title: data.title || 'No Title',
+        date: data.date || '1970-01-01', // Default ke tanggal awal
+        thumbnail: data.thumbnail || '',
+        externalLinks: data.externalLinks || [data.externalLink || ''],
+      };
+    })
+    .filter((post) => {
+      const timestamp = getSafeTimestamp(post.date);
+      return timestamp > 0; // Hanya ambil post dengan date valid (lebih dari epoch)
+    })
+    .sort((a, b) => getSafeTimestamp(b.date) - getSafeTimestamp(a.date)); // Sort descending
 
   return (
     <div className="container mx-auto p-4">
@@ -58,4 +60,4 @@ export default async function Home() {
       </div>
     </div>
   );
-}
+           }
