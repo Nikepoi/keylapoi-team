@@ -3,7 +3,22 @@ import path from 'path';
 import matter from 'gray-matter';
 import Link from 'next/link';
 
-export default function Genres({ postsByGenre }) {
+export default async function Genres() {
+  const contentDir = path.join(process.cwd(), 'content');
+  const files = fs.readdirSync(contentDir);
+  const posts = files.map((file) => {
+    const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
+    const { data } = matter(fileContent);
+    return { id: file.replace('.md', ''), ...data, externalLinks: data.externalLinks || [data.externalLink || ''] };
+  });
+
+  const postsByGenre = posts.reduce((acc, post) => {
+    const genre = post.genre || 'Uncategorized';
+    if (!acc[genre]) acc[genre] = [];
+    acc[genre].push(post);
+    return acc;
+  }, {});
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold text-yellow-500 text-center mb-6">KeylaPoi - Genres</h1>
@@ -24,23 +39,4 @@ export default function Genres({ postsByGenre }) {
       ))}
     </div>
   );
-}
-
-export async function getStaticProps() {
-  const contentDir = path.join(process.cwd(), 'content');
-  const files = fs.readdirSync(contentDir);
-  const posts = files.map((file) => {
-    const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
-    const { data } = matter(fileContent);
-    return { id: file.replace('.md', ''), ...data, externalLinks: data.externalLinks || [data.externalLink || ''] };
-  });
-
-  const postsByGenre = posts.reduce((acc, post) => {
-    const genre = post.genre || 'Uncategorized';
-    if (!acc[genre]) acc[genre] = [];
-    acc[genre].push(post);
-    return acc;
-  }, {});
-
-  return { props: { postsByGenre } };
 }
