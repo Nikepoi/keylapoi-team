@@ -1,13 +1,15 @@
+"use client";
+
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
+import { useParams } from 'next/navigation';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import Image from 'next/image';
 
 export default function Safelink({ post }) {
-  const router = useRouter();
-  const { id } = router.query;
+  const params = useParams();
+  const { id } = params || {};
   const [countdown, setCountdown] = useState(6);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [currentLinkIndex, setCurrentLinkIndex] = useState(0);
@@ -49,7 +51,6 @@ export default function Safelink({ post }) {
     return 'Other';
   };
 
-  if (router.isFallback) return <div className="bg-gray-900 text-white p-4 text-center">Loading...</div>;
   if (!post) return <div className="bg-gray-900 text-white p-4 text-center">Postingan ga ketemu!</div>;
 
   return (
@@ -85,19 +86,8 @@ export default function Safelink({ post }) {
   );
 }
 
-export async function getStaticProps({ params }) {
-  const contentDir = path.join(process.cwd(), 'content');
-  const file = fs.readdirSync(contentDir).find(f => f.replace('.md', '') === params.id);
-  if (file) {
-    const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
-    const { data } = matter(fileContent);
-    return { props: { post: { ...data, externalLinks: data.externalLinks || [data.externalLink || ''] } } };
-  }
-  return { props: { post: null } };
-}
-
-export async function getStaticPaths() {
+export async function generateStaticParams() {
   const contentDir = path.join(process.cwd(), 'content');
   const files = fs.readdirSync(contentDir);
-  return { paths: files.map(file => ({ params: { id: file.replace('.md', '') } })), fallback: false };
-}
+  return files.map(file => ({ id: file.replace('.md', '') }));
+                       }
