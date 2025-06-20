@@ -1,71 +1,22 @@
-"use client";
-
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import Image from 'next/image';
 
-export default function Safelink() {
-  const params = useParams();
-  const { id } = params || {};
-  const [countdown, setCountdown] = useState(6);
-  const [isRedirecting, setIsRedirecting] = useState(false);
-  const [currentLinkIndex, setCurrentLinkIndex] = useState(0);
-  const [decodedLinks, setDecodedLinks] = useState<string[]>([]);
-  const [post, setPost] = useState(null);
+export default function Safelink({ post }) {
+  if (!post) return <div className="bg-gray-900 text-white p-4 text-center">Postingan ga ketemu!</div>;
 
-  useEffect(() => {
-    const loadPost = async () => {
-      const contentDir = path.join(process.cwd(), 'content');
-      const file = fs.readdirSync(contentDir).find(f => f.replace('.md', '') === id);
-      if (file) {
-        const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
-        const { data } = matter(fileContent);
-        setPost({ ...data, externalLinks: data.externalLinks || [data.externalLink || ''] });
-      }
-    };
-    loadPost();
-  }, [id]);
-
-  useEffect(() => {
-    if (post?.externalLinks?.length) {
-      const decoded = post.externalLinks.map(link => atob(link));
-      setDecodedLinks(decoded);
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            handleRedirect();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [post]);
-
-  const handleRedirect = () => {
-    if (!isRedirecting && decodedLinks[currentLinkIndex]) {
-      setIsRedirecting(true);
-      alert('Link akan dibuka di tab baru!');
-      window.open(decodedLinks[currentLinkIndex], '_blank');
-      setCurrentLinkIndex((prev) => (prev + 1) % decodedLinks.length);
-      setCountdown(6);
-      setIsRedirecting(false);
-    }
+  const handleRedirect = (link) => {
+    alert('Link akan dibuka di tab baru!');
+    window.open(atob(link), '_blank');
   };
 
-  const getServerName = (url: string) => {
+  const getServerName = (url) => {
     if (url.includes('videy.co')) return 'Videy';
     if (url.includes('1024terabox.com')) return 'Terabox';
     if (url.includes('pixeldrain.com')) return 'Pixeldrain';
     return 'Other';
   };
-
-  if (!post) return <div className="bg-gray-900 text-white p-4 text-center">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center font-poppins">
@@ -76,17 +27,15 @@ export default function Safelink() {
         <h4 className="text-lg text-gray-300 mb-2 text-center">Download via</h4>
         <ul className="mb-4">
           {post.externalLinks.map((link, index) => {
-            const serverName = getServerName(decodedLinks[index] || '');
+            const serverName = getServerName(atob(link));
             return (
               <li key={index} className="text-center mb-2">
-                <a
-                  href="#"
-                  onClick={handleRedirect}
-                  className="download-button bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-400 disabled:bg-gray-500 disabled:cursor-not-allowed inline-block"
-                  disabled={countdown > 0 || isRedirecting || index !== currentLinkIndex}
+                <button
+                  onClick={() => handleRedirect(link)}
+                  className="download-button bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-400 w-full"
                 >
-                  {`${serverName} ${index + 1} - ${countdown > 0 && index === 0 ? `Tunggu ${countdown} detik...` : 'OK'}`}
-                </a>
+                  {`${serverName} ${index + 1}`}
+                </button>
               </li>
             );
           })}
@@ -98,4 +47,10 @@ export default function Safelink() {
       </div>
     </div>
   );
-          }
+}
+
+export async function generateStaticParams() {
+  const contentDir = path.join(process.cwd(), 'content');
+  const files = fs.readdirSync(contentDir);
+  return files.map(file => ({ id: file.replace('.md', '') }));
+    }
