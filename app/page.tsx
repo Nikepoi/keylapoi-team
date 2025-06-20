@@ -4,6 +4,14 @@ import matter from 'gray-matter';
 import Image from 'next/image';
 import Link from 'next/link';
 
+type PostMeta = {
+  title?: string;
+  date?: string;
+  thumbnail?: string;
+  externalLink?: string;
+  externalLinks?: string[];
+};
+
 const getSafeTimestamp = (dateStr: string): number => {
   const timestamp = Date.parse(dateStr);
   return isNaN(timestamp) ? Date.parse('1970-01-01') : timestamp;
@@ -15,10 +23,12 @@ export default async function Home() {
   const posts = files
     .map((file) => {
       const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
-      const { data } = matter(fileContent);
+      const { data } = matter(fileContent) as { data: PostMeta };
       return {
         id: file.replace('.md', ''),
-        ...data,
+        title: data.title || 'No Title',
+        date: data.date || '1970-01-01',
+        thumbnail: data.thumbnail || '',
         externalLinks: data.externalLinks || [data.externalLink || ''],
       };
     })
@@ -61,4 +71,4 @@ export default async function Home() {
       </div>
     </div>
   );
-      }
+        }
