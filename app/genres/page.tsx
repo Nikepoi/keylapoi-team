@@ -3,10 +3,21 @@ import path from 'path';
 import matter from 'gray-matter';
 import Link from 'next/link';
 
+// Definisikan tipe buat post
+interface Post {
+  id: string;
+  title: string;
+  date: string;
+  thumbnail: string;
+  externalLinks: string[];
+  genre?: string; // Opsional karena ga semua post punya genre
+  [key: string]: any; // Buat field tambahan
+}
+
 export default async function Genres() {
   const contentDir = path.join(process.cwd(), 'content');
   const files = fs.readdirSync(contentDir);
-  const posts = files.map((file) => {
+  const posts: Post[] = files.map((file) => {
     const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
     const { data } = matter(fileContent);
     return { id: file.replace('.md', ''), ...data, externalLinks: data.externalLinks || [data.externalLink || ''] };
@@ -17,7 +28,7 @@ export default async function Genres() {
     if (!acc[genre]) acc[genre] = [];
     acc[genre].push(post);
     return acc;
-  }, {});
+  }, {} as { [key: string]: Post[] });
 
   return (
     <div className="container mx-auto p-4">
