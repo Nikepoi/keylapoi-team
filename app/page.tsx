@@ -4,7 +4,15 @@ import matter from 'gray-matter';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function Home({ posts }) {
+export default async function Home() {
+  const contentDir = path.join(process.cwd(), 'content');
+  const files = fs.readdirSync(contentDir);
+  const posts = files.map((file) => {
+    const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
+    const { data } = matter(fileContent);
+    return { id: file.replace('.md', ''), ...data, externalLinks: data.externalLinks || [data.externalLink || ''] };
+  }).sort((a, b) => new Date(b.date) - new Date(a.date));
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold text-yellow-500 text-center mb-6">KeylaPoi - Postingan Terbaru</h1>
@@ -36,15 +44,4 @@ export default function Home({ posts }) {
       </div>
     </div>
   );
-}
-
-export async function getStaticProps() {
-  const contentDir = path.join(process.cwd(), 'content');
-  const files = fs.readdirSync(contentDir);
-  const posts = files.map((file) => {
-    const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
-    const { data } = matter(fileContent);
-    return { id: file.replace('.md', ''), ...data, externalLinks: data.externalLinks || [data.externalLink || ''] };
-  }).sort((a, b) => new Date(b.date) - new Date(a.date));
-  return { props: { posts } };
-}
+                }
