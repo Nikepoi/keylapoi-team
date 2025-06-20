@@ -4,10 +4,10 @@ import matter from 'gray-matter';
 import Image from 'next/image';
 import Link from 'next/link';
 
-// Fungsi buat konversi date ke timestamp dengan fallback aman
-const getSafeDateTimestamp = (dateStr: string): number => {
-  const date = new Date(dateStr);
-  return isNaN(date.getTime()) ? 0 : date.getTime(); // Fallback ke 0 kalau ga valid
+// Fungsi konversi tanggal yang aman
+const getSafeTimestamp = (dateStr: string): number => {
+  const timestamp = Date.parse(dateStr); // Konversi ke timestamp
+  return isNaN(timestamp) ? 0 : timestamp; // Fallback ke 0 kalau ga valid
 };
 
 export default async function Home() {
@@ -24,8 +24,8 @@ export default async function Home() {
       externalLinks: data.externalLinks || [data.externalLink || ''],
     };
   }).sort((a, b) => {
-    const timeA = getSafeDateTimestamp(a.date);
-    const timeB = getSafeDateTimestamp(b.date);
+    const timeA = getSafeTimestamp(a.date);
+    const timeB = getSafeTimestamp(b.date);
     return timeB - timeA; // Sort descending
   });
 
@@ -58,4 +58,4 @@ export default async function Home() {
       </div>
     </div>
   );
-      }
+}
