@@ -4,23 +4,30 @@ import matter from 'gray-matter';
 import Image from 'next/image';
 import Link from 'next/link';
 
+// Fungsi buat konversi date ke timestamp dengan fallback aman
+const getSafeDateTimestamp = (dateStr: string): number => {
+  const date = new Date(dateStr);
+  return isNaN(date.getTime()) ? 0 : date.getTime(); // Fallback ke 0 kalau ga valid
+};
+
 export default async function Home() {
   const contentDir = path.join(process.cwd(), 'content');
   const files = fs.readdirSync(contentDir);
-  const posts = files
-    .map((file) => {
-      const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
-      const { data } = matter(fileContent);
-      return {
-        id: file.replace('.md', ''),
-        title: data.title || 'No Title',
-        date: data.date || '1970-01-01', // Default ke tanggal awal kalau ga ada
-        thumbnail: data.thumbnail || '',
-        externalLinks: data.externalLinks || [data.externalLink || ''],
-      };
-    })
-    .filter((post) => !isNaN(Date.parse(post.date))) // Filter hanya post dengan date valid
-    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date)); // Sort descending berdasarkan timestamp
+  const posts = files.map((file) => {
+    const fileContent = fs.readFileSync(path.join(contentDir, file), 'utf8');
+    const { data } = matter(fileContent);
+    return {
+      id: file.replace('.md', ''),
+      title: data.title || 'No Title',
+      date: data.date || '1970-01-01', // Default ke tanggal awal
+      thumbnail: data.thumbnail || '',
+      externalLinks: data.externalLinks || [data.externalLink || ''],
+    };
+  }).sort((a, b) => {
+    const timeA = getSafeDateTimestamp(a.date);
+    const timeB = getSafeDateTimestamp(b.date);
+    return timeB - timeA; // Sort descending
+  });
 
   return (
     <div className="container mx-auto p-4">
@@ -51,4 +58,4 @@ export default async function Home() {
       </div>
     </div>
   );
-                }
+      }
