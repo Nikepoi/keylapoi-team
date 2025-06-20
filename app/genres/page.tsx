@@ -6,8 +6,8 @@ import Link from 'next/link';
 
 // Fungsi konversi tanggal yang super aman
 const getSafeTimestamp = (dateStr: string): number => {
-  const timestamp = Date.parse(dateStr); // Coba parse ke timestamp
-  return isNaN(timestamp) ? Date.parse('1970-01-01') : timestamp; // Fallback ke epoch kalau ga valid
+  const timestamp = Date.parse(dateStr);
+  return isNaN(timestamp) ? Date.parse('1970-01-01') : timestamp;
 };
 
 export default async function Home() {
@@ -20,16 +20,16 @@ export default async function Home() {
       return {
         id: file.replace('.md', ''),
         title: data.title || 'No Title',
-        date: data.date || '1970-01-01', // Default ke tanggal awal
+        date: data.date || '1970-01-01',
         thumbnail: data.thumbnail || '',
         externalLinks: data.externalLinks || [data.externalLink || ''],
       };
     })
     .filter((post) => {
       const timestamp = getSafeTimestamp(post.date);
-      return timestamp > 0; // Hanya ambil post dengan date valid (lebih dari epoch)
+      return timestamp > 0;
     })
-    .sort((a, b) => getSafeTimestamp(b.date) - getSafeTimestamp(a.date)); // Sort descending
+    .sort((a, b) => getSafeTimestamp(b.date) - getSafeTimestamp(a.date)); // ✅ FIXED: pakai timestamp number
 
   return (
     <div className="container mx-auto p-4">
@@ -47,11 +47,19 @@ export default async function Home() {
           return (
             <div key={post.id} className="bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-700">
               <Link href={`/safelink/${post.id}`} target="_blank" rel="noopener noreferrer">
-                <Image src={post.thumbnail} alt={post.title} width={300} height={300} className="w-full h-48 object-cover" />
+                <Image
+                  src={post.thumbnail}
+                  alt={post.title}
+                  width={300}
+                  height={300}
+                  className="w-full h-48 object-cover"
+                />
                 <div className="p-4 text-center">
                   <h3 className="text-lg font-semibold text-yellow-500">{post.title}</h3>
                   <p className="text-gray-400 text-sm">{post.date}</p>
-                  {serverNames.length > 0 && <p className="text-gray-300 text-xs">Links: {serverNames.join(', ')}</p>}
+                  {serverNames.length > 0 && (
+                    <p className="text-gray-300 text-xs">Links: {serverNames.join(', ')}</p>
+                  )}
                 </div>
               </Link>
             </div>
@@ -60,4 +68,4 @@ export default async function Home() {
       </div>
     </div>
   );
-           }
+        }
